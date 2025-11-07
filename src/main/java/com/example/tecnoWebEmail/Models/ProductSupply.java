@@ -6,6 +6,10 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "product_supplies_bom")
 public class ProductSupply {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_supply_id")
+    private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
@@ -20,6 +24,14 @@ public class ProductSupply {
 
     // Constructor vacío
     public ProductSupply() {}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     // Constructor con parámetros
     public ProductSupply(Product product, Supply supply, BigDecimal requiredAmount) {
