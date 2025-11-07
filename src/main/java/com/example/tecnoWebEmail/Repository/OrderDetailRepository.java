@@ -2,6 +2,7 @@ package com.example.tecnoWebEmail.Repository;
 
 import com.example.tecnoWebEmail.Models.Order;
 import com.example.tecnoWebEmail.Models.OrderDetail;
+import com.example.tecnoWebEmail.Models.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
