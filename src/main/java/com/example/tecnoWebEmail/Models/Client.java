@@ -11,6 +11,9 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "ci",length = 10,unique = true, nullable = false)
+    private String ci;
+
     @Column(name = "first_name", length = 100, nullable = false)
     private String firstName;
 
@@ -34,7 +37,8 @@ public class Client {
     public Client() {}
 
     // Constructor con parámetros
-    public Client(String firstName, String lastName, String email, String phone, String address) {
+    public Client(String ci, String firstName, String lastName, String email, String phone, String address) {
+        this.ci = ci;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -49,6 +53,14 @@ public class Client {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCi() {
+        return ci;
+    }
+
+    public void setCi(String ci) {
+        this.ci = ci;
     }
 
     public String getFirstName() {
@@ -103,6 +115,7 @@ public class Client {
     public String toString() {
         return "Client{" +
                 "id=" + id +
+                ", ci='" + ci + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +

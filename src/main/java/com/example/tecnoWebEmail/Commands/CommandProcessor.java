@@ -1,12 +1,11 @@
-package com.example.tecnoWebEmail.Service;
+package com.example.tecnoWebEmail.Commands;
 
+import com.example.tecnoWebEmail.Service.EmailResponseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.tecnoWebEmail.Models.Client;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,10 +14,15 @@ import java.util.regex.Pattern;
 public class CommandProcessor {
 
     @Autowired
-    private ClientService ClientService;
-
-    @Autowired
     private EmailResponseService emailResponseService;
+    @Autowired
+    private ClientCommand clientCommand;
+    @Autowired
+    private RoleCommand roleCommand;
+    @Autowired
+    private UserCommand userCommand;
+    @Autowired
+    private OrderCommand orderCommand;
 
     public String processCommand(String subject, String senderEmail) {
         System.out.println("DEBUG: processCommand iniciado - subject: [" + subject + "], sender: [" + senderEmail + "]");
@@ -36,9 +40,41 @@ public class CommandProcessor {
 
             System.out.println("DEBUG: Entrando al switch con comando: [" + command.toUpperCase() + "]");
             switch (command.toUpperCase()) {
-                case "LISPER":
-                    return handleListClientes(parameters);
-                
+                //cliente
+                case "LISCLI":
+                    return clientCommand.handleListClientes();
+                case "INSCLI":
+                    return clientCommand.handleInsertClient(parameters);
+                case "BUSCLI":
+                    return clientCommand.handleFindClientByCI(parameters);//por ci
+
+                //roles
+                case "LISROL":
+                    return roleCommand.handleListRoles();
+                case "INSROL":
+                    return roleCommand.handleInsertRole(parameters);
+                case "BUSROL":
+                    return roleCommand.handleSearchRole(parameters);//por nombre
+                case "UPDROL":
+                    return roleCommand.handleUpdateRole(parameters);
+
+                //users
+                case "LISUSU":
+                    return userCommand.handleListUsers();
+                case "BUSUSU":
+                    return userCommand.handleSearchUserByCi(parameters);//por ci
+                case "INSUSU":
+                    return userCommand.handleInsertUser(parameters);
+                case "UPDUSU":
+                    return userCommand.handleUpdateUser(parameters);
+
+                //orders
+                case "LISORD":
+                    return orderCommand.handleListOrders();
+                case "BUSORD":
+                    return orderCommand.handleSearchOrder(parameters);//por id
+                case "INSORD":
+                    return orderCommand.handleInsertOrder(parameters);
                 default:
                     return emailResponseService.formatUnknownCommandResponse(command);
             }
@@ -106,17 +142,4 @@ public class CommandProcessor {
         System.out.println("extractParameters - No se encontraron parámetros");
         return new String[0];
     }
-
-    private String handleListClientes(String[] parameters) {
-        try {
-            List<Client> clients = ClientService.getAllClients();
-            return emailResponseService.formatListClientsResponse(clients, "LISPER");
-        } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al listar personas: " + e.getMessage(), "LISPER");
-        
-    }
-
-
-
-}
 }
