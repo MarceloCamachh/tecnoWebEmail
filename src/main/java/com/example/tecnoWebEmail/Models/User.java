@@ -12,6 +12,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "ci",length = 10,unique = true, nullable = false)
+    private String ci;
+
     @Column(name = "username", length = 50, nullable = false, unique = true)
     private String username;
 
@@ -45,7 +48,8 @@ public class User {
     public User() {}
 
     // Constructor con parámetros
-    public User(String username, String password, String email, String firstName, String lastName, Role role) {
+    public User(String ci, String username, String password, String email, String firstName, String lastName, Role role) {
+        this.ci = ci;
         this.username = username;
         this.password = password;
         this.email = email;
@@ -67,6 +71,14 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCi() {
+        return ci;
+    }
+
+    public void setCi(String ci) {
+        this.ci = ci;
     }
 
     public String getUsername() {
@@ -145,6 +157,7 @@ public class User {
     public String toString() {
         return "User{" +
                 "id=" + id +
+                ", ci='" + ci + '\'' +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 ", firstName='" + firstName + '\'' +

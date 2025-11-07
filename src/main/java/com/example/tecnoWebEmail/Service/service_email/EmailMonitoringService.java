@@ -1,6 +1,5 @@
-package com.example.tecnoWebEmail.Service;
+package com.example.tecnoWebEmail.Service.service_email;
 
-import com.example.tecnoWebEmail.Service.service_email.ClientPOP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

@@ -16,7 +16,7 @@ public class EmailResponseService {
     /**
      * Genera el encabezado estándar para todas las respuestas
      */
-    private String generateHeader(String comando) {
+    public String generateHeader(String comando) {
         StringBuilder header = new StringBuilder();
         header.append(SEPARATOR).append("\n");
         header.append("    SISTEMA DE GESTIÓN - GRUPO 21SA\n");
@@ -28,34 +28,7 @@ public class EmailResponseService {
     /**
      * Formatea la respuesta para listar clientss
      */
-     public String formatListClientsResponse(List<Client> clients, String command) {
-        StringBuilder response = new StringBuilder();
-        response.append(generateHeader(command));
 
-        if (clients.isEmpty()) {
-            response.append("RESULTADO DEL LISTADO\n");
-            response.append(MINI_SEPARATOR).append("\n");
-            response.append(" No se encontraron cliens en la base de datos.\n");
-        } else {
-            response.append(" LISTADO DE PERSONAS\n");
-            response.append(MINI_SEPARATOR).append("\n");
-            response.append("Total de registros encontrados: ").append(clients.size()).append("\n\n");
-
-            int contador = 1;
-            for (Client client : clients) {
-                response.append(" PERSONA #").append(contador).append("\n");
-                response.append("   • CI: ").append(client.getId()).append("\n");
-                response.append("   • Nombre: ").append(client.getFirstName()).append(" ").append(client.getLastName()).append("\n");
-                response.append("   • Direccion: ").append(client.getAddress()).append("\n");
-                response.append("   • Teléfono: ").append(client.getPhone()).append("\n");
-                response.append("   • Email: ").append(client.getEmail()).append("\n");
-                response.append("\n");
-                contador++;
-            }
-        }
-        System.out.println(response.toString());
-        return response.toString();
-    }
      public String formatErrorResponse(String error, String command) {
         StringBuilder response = new StringBuilder();
         response.append(generateHeader(command));

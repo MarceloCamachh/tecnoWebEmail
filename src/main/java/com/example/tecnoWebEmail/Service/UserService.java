@@ -1,5 +1,6 @@
 package com.example.tecnoWebEmail.Service;
 
+import com.example.tecnoWebEmail.Models.Client;
 import com.example.tecnoWebEmail.Models.Role;
 import com.example.tecnoWebEmail.Models.User;
 import com.example.tecnoWebEmail.Repository.RoleRepository;
@@ -7,6 +8,7 @@ import com.example.tecnoWebEmail.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +25,13 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Transactional
     public User createUser(User user, String roleName) {
 
-        // 1. Validar si el username o email ya existen
+        // 1. Validar si el CI, username o email ya existen
+        if (userRepository.findByCi(user.getCi()).isPresent()) {
+            throw new RuntimeException("CI already registered: " + user.getCi());
+        }
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("Username already taken: " + user.getUsername());
         }
@@ -47,6 +53,46 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Actualiza un usuario existente, identificado por su CI.
+     * No actualiza la contraseña (eso debería ser un comando separado).
+     */
+    @Transactional
+    public User updateUser(String ci, User userDetails, String roleName) {
+
+        // 1. Encontrar al usuario por su CI
+        User user = userRepository.findByCi(ci)
+                .orElseThrow(() -> new RuntimeException("User not found with CI: " + ci));
+
+        // 2. Buscar y asignar el nuevo ROL
+        Role newRole = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        user.setRole(newRole);
+
+        // 3. Validar y actualizar USERNAME (si es diferente)
+        if (!user.getUsername().equals(userDetails.getUsername())) {
+            if (userRepository.findByUsername(userDetails.getUsername()).isPresent()) {
+                throw new RuntimeException("New username is already taken: " + userDetails.getUsername());
+            }
+            user.setUsername(userDetails.getUsername());
+        }
+
+        // 4. Validar y actualizar EMAIL (si es diferente)
+        if (!user.getEmail().equals(userDetails.getEmail())) {
+            if (userRepository.findByEmail(userDetails.getEmail()).isPresent()) {
+                throw new RuntimeException("New email is already in use: " + userDetails.getEmail());
+            }
+            user.setEmail(userDetails.getEmail());
+        }
+
+        // 5. Actualizar el resto de campos
+        user.setFirstName(userDetails.getFirstName());
+        user.setLastName(userDetails.getLastName());
+
+        return userRepository.save(user);
+    }
+
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -63,6 +109,10 @@ public class UserService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
         return userRepository.findByRole(role);
+    }
+
+    public Optional<User> getUserByCi(String ci) {
+        return userRepository.findByCi(ci);
     }
 
 }

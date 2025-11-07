@@ -22,6 +22,9 @@ public class ClientService {
         return clientRepository.findAll();
     }
 
+    public Optional<Client> getClientByCi(String ci) {
+        return clientRepository.findByCi(ci);
+    }
     /**
      * Obtiene un cliente por su ID.
      */

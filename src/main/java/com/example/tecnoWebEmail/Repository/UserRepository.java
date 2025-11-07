@@ -1,5 +1,6 @@
 package com.example.tecnoWebEmail.Repository;
 
+import com.example.tecnoWebEmail.Models.Client;
 import com.example.tecnoWebEmail.Models.Role;
 import com.example.tecnoWebEmail.Models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Contar usuarios por rol
     long countByRole(Role role);
+
+    Optional<User> findByCi(String ci);
 }

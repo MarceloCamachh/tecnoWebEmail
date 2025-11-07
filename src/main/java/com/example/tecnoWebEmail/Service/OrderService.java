@@ -8,10 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class OrderService {
@@ -32,47 +29,66 @@ public class OrderService {
     @Autowired
     private InstallmentService installmentService;
 
-    @Transactional(rollbackFor = Exception.class)
-    public Order createOrder(Order orderData, List<OrderDetail> details, Long clientId, Long userId, Integer numberOfInstallments) {
+    @Autowired
+    private ProductionOrderService productionOrderService;
 
-        // 1. Validar y obtener entidades principales
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client not found with id: " + clientId));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User (employee) not found with id: " + userId));
+    /**
+     * @param paymentCondition   "Cash" o "Credit"
+     * @param productDetails     Un Mapa donde K=ID de Producto, V=Cantidad
+     * @param clientCi           CI del Cliente
+     * @param userCi             CI del Usuario (empleado)
+     * @param numberOfInstallments 0 si es "Cash", >0 si es "Credit"
+     * @return El Pedido (Order) creado y guardado.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Order createOrder(String paymentCondition, Map<Long, Integer> productDetails, String clientCi, String userCi, Integer numberOfInstallments) {
+
+        // 1. Validar y obtener entidades principales POR CI
+        Client client = clientRepository.findByCi(clientCi)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con CI: " + clientCi));
+        User user = userRepository.findByCi(userCi)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con CI: " + userCi));
 
         // 2. Preparar el objeto Order
         Order order = new Order();
         order.setClient(client);
         order.setUser(user);
-        order.setPaymentCondition(orderData.getPaymentCondition());
-        order.setStatus("Pending");
+        order.setPaymentCondition(paymentCondition);
+        order.setStatus("Pending"); // Estado de producción del pedido
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         Set<OrderDetail> processedDetails = new HashSet<>();
 
-        // 3. Procesar cada línea de detalle (OrderDetail)
-        for (OrderDetail detail : details) {
-            Product product = productRepository.findById(detail.getProduct().getId())
-                    .orElseThrow(() -> new RuntimeException("Product not found with id: " + detail.getProduct().getId()));
+        // 3. Procesar cada línea de detalle (del Mapa)
+        for (Map.Entry<Long, Integer> entry : productDetails.entrySet()) {
+            Long productId = entry.getKey();
+            Integer quantity = entry.getValue();
 
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
+
+            // Crear el nuevo detalle
+            OrderDetail detail = new OrderDetail();
+            detail.setQuantity(quantity);
             detail.setUnitPrice(product.getPrecioVenta());
             detail.setProduct(product);
-            detail.setOrder(order); // Vincular el detalle al pedido
+            detail.setOrder(order);
 
             // Sumar al total
-            BigDecimal lineTotal = detail.getUnitPrice().multiply(new BigDecimal(detail.getQuantity()));
+            BigDecimal lineTotal = detail.getUnitPrice().multiply(new BigDecimal(quantity));
             totalAmount = totalAmount.add(lineTotal);
 
             processedDetails.add(detail);
+        }
+
+        if (processedDetails.isEmpty()) {
+            throw new RuntimeException("No se puede crear una orden sin productos.");
         }
 
         // 4. Guardar el Pedido (Order) y sus Detalles (OrderDetails)
         order.setTotalAmount(totalAmount);
         order.setOrderDetails(processedDetails);
 
-        // Gracias a 'cascade = CascadeType.ALL' en la entidad Order,
-        // esto guarda el Order Y todos sus OrderDetails asociados.
         Order savedOrder = orderRepository.save(order);
 
         // 5. Lógica POST-GUARDADO (Crédito y Producción)
@@ -80,16 +96,15 @@ public class OrderService {
         // 5a. Si es a crédito, crear las cuotas
         if ("Credit".equals(savedOrder.getPaymentCondition())) {
             if (numberOfInstallments == null || numberOfInstallments <= 0) {
-                throw new IllegalArgumentException("Number of installments is required for credit orders.");
+                throw new IllegalArgumentException("Se requiere un número de cuotas > 0 para pedidos a crédito.");
             }
-            // Llamar al servicio que ya creamos
             installmentService.createInstallmentsForOrder(savedOrder, numberOfInstallments);
         }
 
         // 5b. Crear las Órdenes de Producción (una por cada detalle)
-        // for (OrderDetail detail : savedOrder.getOrderDetails()) {
-        //     productionOrderService.createProductionOrderForDetail(detail);
-        // }
+        for (OrderDetail detail : savedOrder.getOrderDetails()) {
+            productionOrderService.createProductionOrderForDetail(detail);
+        }
 
         return savedOrder;
     }
