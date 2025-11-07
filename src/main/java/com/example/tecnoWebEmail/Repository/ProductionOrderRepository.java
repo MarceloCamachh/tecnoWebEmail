@@ -4,6 +4,7 @@ import com.example.tecnoWebEmail.Models.ProductionOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -13,5 +14,5 @@ public interface ProductionOrderRepository extends JpaRepository<ProductionOrder
     List<ProductionOrder> findByStatus(String status);
 
     // Encontrar por fecha de finalización estimada
-    List<ProductionOrder> findByEstimatedCompletionDate(String date);
+    List<ProductionOrder> findByEstimatedCompletionDate(LocalDate date);
 }
