@@ -23,6 +23,10 @@ public class CommandProcessor {
     private UserCommand userCommand;
     @Autowired
     private OrderCommand orderCommand;
+    @Autowired
+    private InstallmentCommand installmentCommand;
+    @Autowired
+    private PaymentCommand paymentCommand;
 
     public String processCommand(String subject, String senderEmail) {
         System.out.println("DEBUG: processCommand iniciado - subject: [" + subject + "], sender: [" + senderEmail + "]");
@@ -77,6 +81,26 @@ public class CommandProcessor {
                     return orderCommand.handleInsertOrder(parameters);
                 default:
                     return emailResponseService.formatUnknownCommandResponse(command);
+
+                //cuotas de pago
+                case "LISCUP"://buscaria las cuotas de una orden
+                    return installmentCommand.handleListInstallmentsByOrder(parameters);
+                case "LISVEN"://retorna las cuotas vencidas que no esten pagadas
+                    return installmentCommand.handleListOverdueInstallments();
+                case "LISCES"://retorna las cuotas en algun estado
+                    return installmentCommand.handleListInstallmentsByState(parameters);
+
+                //pagos
+                case "INSPAG":
+                    return paymentCommand.handleInsertPayment(parameters);
+                case "LISPAG":
+                    return paymentCommand.handleListAllPayments();
+                case "BUSPAG":
+                    return paymentCommand.handleSearchPayment(parameters);
+                case "LISPEDPAG":
+                    return paymentCommand.handleListPaymentsByOrder(parameters);
+                case "LISCUPAG":
+                    return paymentCommand.handleListPaymentsByInstallment(parameters);
             }
 
         } catch (Exception e) {
