@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -33,5 +34,29 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // Corresponde a sumar todos los 'monto' donde el 'cuota_id' sea el mismo.
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.installment.id = :installmentId")
     BigDecimal getTotalPaidForInstallment(@Param("installmentId") Long installmentId);
+
+    /**
+     * Para LISPAG: Trae todos los pagos con sus Pedidos y Cuotas (opcional).
+     */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o LEFT JOIN FETCH p.installment i")
+    List<Payment> findAllWithDetails();
+
+    /**
+     * Para BUSPAG: Trae un pago por ID con sus Pedidos y Cuotas (opcional).
+     */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o LEFT JOIN FETCH p.installment i WHERE p.id = :id")
+    Optional<Payment> findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * Para LISPEDPAG: Trae pagos por ID de Pedido, con Pedidos y Cuotas.
+     */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o LEFT JOIN FETCH p.installment i WHERE o.id = :orderId")
+    List<Payment> findByOrderIdWithDetails(@Param("orderId") Long orderId);
+
+    /**
+     * Para LISCUPAG: Trae pagos por ID de Cuota, con Pedidos y Cuotas.
+     */
+    @Query("SELECT p FROM Payment p JOIN FETCH p.order o JOIN FETCH p.installment i WHERE i.id = :installmentId")
+    List<Payment> findByInstallmentIdWithDetails(@Param("installmentId") Long installmentId);
 
 }
