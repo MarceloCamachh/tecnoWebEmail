@@ -2,12 +2,14 @@ package com.example.tecnoWebEmail.Service;
 
 import com.example.tecnoWebEmail.Models.OrderDetail;
 import com.example.tecnoWebEmail.Models.ProductionOrder;
+import com.example.tecnoWebEmail.Repository.OrderDetailRepository; // Necesario
 import com.example.tecnoWebEmail.Repository.ProductionOrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 public class ProductionOrderService {
@@ -15,32 +17,42 @@ public class ProductionOrderService {
     @Autowired
     private ProductionOrderRepository productionOrderRepository;
 
+    @Autowired
+    private OrderDetailRepository orderDetailRepository; // Inyectado para buscar el detalle
+
     /**
-     * Crea una nueva Orden de Producción basada en un Detalle de Pedido.
-     * Aquí es donde se calcula y se asignan las fechas.
+     * Crea una Orden de Producción recibiendo el ID del detalle y las fechas.
      *
-     * @param detail El OrderDetail que acaba de ser guardado.
+     * @param orderDetailId ID del detalle de pedido que se va a fabricar.
+     * @param startDate     Fecha de inicio de producción.
+     * @param estimatedDate Fecha estimada de finalización.
+     * @return La Orden de Producción creada.
      */
     @Transactional
-    public void createProductionOrderForDetail(OrderDetail detail) {
+    public ProductionOrder createProductionOrder(Long orderDetailId, LocalDate startDate, LocalDate estimatedDate) {
 
+        // 1. Buscar el detalle de pedido
+        OrderDetail detail = orderDetailRepository.findById(orderDetailId)
+                .orElseThrow(() -> new RuntimeException("OrderDetail not found with id: " + orderDetailId));
+
+        // (Opcional: Validar que no tenga ya una orden de producción)
+        if (detail.getProductionOrder() != null) {
+            throw new RuntimeException("Este detalle de pedido ya tiene una orden de producción asociada.");
+        }
+
+        // 2. Crear la orden de producción
         ProductionOrder productionOrder = new ProductionOrder();
-
-        // 1. Vincular la orden de producción al detalle
         productionOrder.setOrderDetail(detail);
+        productionOrder.setStatus("Pending"); // Estado inicial
 
-        // 2. Asignar estado inicial
-        productionOrder.setStatus("Pending"); // O "Pendiente"
+        // 3. Asignar las fechas recibidas como parámetro
+        productionOrder.setStartDate(startDate);
+        productionOrder.setEstimatedCompletionDate(estimatedDate);
 
-        // 3. --- ¡AQUÍ ESTÁ LA LÓGICA DE FECHAS! ---
-        // La producción inicia hoy
-        productionOrder.setStartDate(LocalDate.now());
+        return productionOrderRepository.save(productionOrder);
+    }
 
-        // Asumimos que la empresa tarda 7 días en fabricar.
-        // ESTO ES LÓGICA DE NEGOCIO y puedes cambiarlo.
-        productionOrder.setEstimatedCompletionDate(LocalDate.now().plusDays(7));
-
-        // 4. Guardar la nueva orden de producción
-        productionOrderRepository.save(productionOrder);
+    public Optional<ProductionOrder> getProductionOrderWithDetails(Long id) {
+        return productionOrderRepository.findByIdWithDetails(id);
     }
 }

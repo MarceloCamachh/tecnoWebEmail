@@ -114,9 +114,12 @@ public class ProductSupplyCommand {
                 return emailResponseService.formatErrorResponse(
                         "Parámetro [productId] faltante.", "LISPSP");
             }
+
             Long productId = Long.parseLong(parameters[0].trim());
 
+            System.out.println("DEBUG: id del prodcuto"+productId);
             List<ProductSupply> relations = productSupplyService.getSuppliesForProduct(productId);
+            System.out.println("DEBUG: insumos por producto "+ relations.toString());
 
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("LISPSP"));
@@ -139,6 +142,8 @@ public class ProductSupplyCommand {
                 i++;
             }
             sb.append("OK\n");
+            System.out.println("hola llega hasta aqui");
+            System.out.println(sb.toString());
             return sb.toString();
         } catch (Exception e) {
             return emailResponseService.formatErrorResponse(
