@@ -1,7 +1,6 @@
 package com.example.tecnoWebEmail.Commands;
 
 import com.example.tecnoWebEmail.Models.ProductSupply;
-import com.example.tecnoWebEmail.Models.Product;
 import com.example.tecnoWebEmail.Models.Supply;
 import com.example.tecnoWebEmail.Service.EmailResponseService;
 import com.example.tecnoWebEmail.Service.ProductSupplyService;
@@ -27,13 +26,16 @@ public class ProductSupplyCommand {
     public String handleAddSupplyToProduct(String[] parameters) {
         try {
             if (parameters.length < 3) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 3: [productId,supplyId,requiredAmount]", "ADDSUPP");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 3: [productId,supplyId,requiredAmount]",
+                        "ADDSUPP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Long supplyId = Long.parseLong(parameters[1].trim());
+            Long supplyId  = Long.parseLong(parameters[1].trim());
             BigDecimal required = new BigDecimal(parameters[2].trim());
 
             ProductSupply ps = productSupplyService.addSupplyToProduct(productId, supplyId, required);
+
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("ADDSUPP"));
             sb.append(" Insumo agregado al producto con éxito\n");
@@ -45,7 +47,8 @@ public class ProductSupplyCommand {
             sb.append("OK\n");
             return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al agregar insumo al producto: " + e.getMessage(), "ADDSUPP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al agregar insumo al producto: " + e.getMessage(), "ADDSUPP");
         }
     }
 
@@ -53,15 +56,26 @@ public class ProductSupplyCommand {
     public String handleRemoveSupplyFromProduct(String[] parameters) {
         try {
             if (parameters.length < 2) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 2: [productId,supplyId]", "REMSUPP");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 2: [productId,supplyId]",
+                        "REMSUPP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Long supplyId = Long.parseLong(parameters[1].trim());
+            Long supplyId  = Long.parseLong(parameters[1].trim());
 
             productSupplyService.removeSupplyFromProduct(productId, supplyId);
-            return emailResponseService.generateHeader("REMSUPP") + " Insumo removido de producto.\nOK\n";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(emailResponseService.generateHeader("REMSUPP"));
+            sb.append(" Insumo removido del producto.\n");
+            sb.append(MINI_SEPARATOR).append("\n");
+            sb.append("   • Producto ID: ").append(productId).append("\n");
+            sb.append("   • Insumo ID: ").append(supplyId).append("\n\n");
+            sb.append("OK\n");
+            return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al remover insumo del producto: " + e.getMessage(), "REMSUPP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al remover insumo del producto: " + e.getMessage(), "REMSUPP");
         }
     }
 
@@ -69,13 +83,16 @@ public class ProductSupplyCommand {
     public String handleUpdateRequiredAmount(String[] parameters) {
         try {
             if (parameters.length < 3) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 3: [productId,supplyId,newAmount]", "UPDPSP");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 3: [productId,supplyId,newAmount]",
+                        "UPDPSP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Long supplyId = Long.parseLong(parameters[1].trim());
+            Long supplyId  = Long.parseLong(parameters[1].trim());
             BigDecimal newAmount = new BigDecimal(parameters[2].trim());
 
             ProductSupply updated = productSupplyService.updateRequiredAmount(productId, supplyId, newAmount);
+
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("UPDPSP"));
             sb.append(" Requisito actualizado.\n");
@@ -85,7 +102,8 @@ public class ProductSupplyCommand {
             sb.append("OK\n");
             return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al actualizar cantidad requerida: " + e.getMessage(), "UPDPSP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al actualizar cantidad requerida: " + e.getMessage(), "UPDPSP");
         }
     }
 
@@ -93,16 +111,24 @@ public class ProductSupplyCommand {
     public String handleListSuppliesForProduct(String[] parameters) {
         try {
             if (parameters.length < 1) {
-                return emailResponseService.formatErrorResponse("Parámetro [productId] faltante.", "LISPSP");
+                return emailResponseService.formatErrorResponse(
+                        "Parámetro [productId] faltante.", "LISPSP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
+
             List<ProductSupply> relations = productSupplyService.getSuppliesForProduct(productId);
 
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("LISPSP"));
             sb.append(" LISTADO DE INSUMOS POR PRODUCTO\n");
             sb.append(MINI_SEPARATOR).append("\n");
-            sb.append("Total de registros: ").append(relations.size()).append("\n\n");
+            sb.append("Producto ID: ").append(productId);
+            if (!relations.isEmpty()) {
+                // Como viene con fetch, podemos tomar el nombre del primero
+                sb.append("  |  Nombre: ").append(relations.get(0).getProduct().getNombre());
+            }
+            sb.append("\nTotal de registros: ").append(relations.size()).append("\n\n");
+
             int i = 1;
             for (ProductSupply ps : relations) {
                 sb.append(" REL #").append(i).append("\n");
@@ -115,7 +141,8 @@ public class ProductSupplyCommand {
             sb.append("OK\n");
             return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al listar insumos por producto: " + e.getMessage(), "LISPSP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al listar insumos por producto: " + e.getMessage(), "LISPSP");
         }
     }
 
@@ -123,16 +150,23 @@ public class ProductSupplyCommand {
     public String handleListProductsUsingSupply(String[] parameters) {
         try {
             if (parameters.length < 1) {
-                return emailResponseService.formatErrorResponse("Parámetro [supplyId] faltante.", "LISUPP");
+                return emailResponseService.formatErrorResponse(
+                        "Parámetro [supplyId] faltante.", "LISUPP");
             }
             Long supplyId = Long.parseLong(parameters[0].trim());
+
             List<ProductSupply> relations = productSupplyService.getProductsUsingSupply(supplyId);
 
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("LISUPP"));
             sb.append(" LISTADO DE PRODUCTOS QUE USAN EL INSUMO\n");
             sb.append(MINI_SEPARATOR).append("\n");
-            sb.append("Total de registros: ").append(relations.size()).append("\n\n");
+            sb.append("Insumo ID: ").append(supplyId);
+            if (!relations.isEmpty()) {
+                sb.append("  |  Nombre: ").append(relations.get(0).getSupply().getNombre());
+            }
+            sb.append("\nTotal de registros: ").append(relations.size()).append("\n\n");
+
             int i = 1;
             for (ProductSupply ps : relations) {
                 sb.append(" REL #").append(i).append("\n");
@@ -145,7 +179,8 @@ public class ProductSupplyCommand {
             sb.append("OK\n");
             return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al listar productos que usan el insumo: " + e.getMessage(), "LISUPP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al listar productos que usan el insumo: " + e.getMessage(), "LISUPP");
         }
     }
 
@@ -153,17 +188,23 @@ public class ProductSupplyCommand {
     public String handleCalculateRequiredSupplies(String[] parameters) {
         try {
             if (parameters.length < 2) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 2: [productId,quantity]", "CALRSU");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 2: [productId,quantity]",
+                        "CALRSU");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Integer qty = Integer.parseInt(parameters[1].trim());
+            Integer qty   = Integer.parseInt(parameters[1].trim());
 
             Map<Supply, BigDecimal> required = productSupplyService.calculateRequiredSupplies(productId, qty);
+
             StringBuilder sb = new StringBuilder();
             sb.append(emailResponseService.generateHeader("CALRSU"));
             sb.append(" REQUISITOS DE INSUMOS PARA PRODUCCIÓN\n");
             sb.append(MINI_SEPARATOR).append("\n");
+            sb.append("Producto ID: ").append(productId).append("\n");
+            sb.append("Cantidad a producir: ").append(qty).append("\n");
             sb.append("Total de insumos: ").append(required.size()).append("\n\n");
+
             int i = 1;
             for (Map.Entry<Supply, BigDecimal> entry : required.entrySet()) {
                 Supply sup = entry.getKey();
@@ -177,7 +218,8 @@ public class ProductSupplyCommand {
             sb.append("OK\n");
             return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al calcular insumos requeridos: " + e.getMessage(), "CALRSU");
+            return emailResponseService.formatErrorResponse(
+                    "Error al calcular insumos requeridos: " + e.getMessage(), "CALRSU");
         }
     }
 
@@ -185,15 +227,26 @@ public class ProductSupplyCommand {
     public String handleValidateSuppliesAvailability(String[] parameters) {
         try {
             if (parameters.length < 2) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 2: [productId,quantity]", "VALSUPP");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 2: [productId,quantity]",
+                        "VALSUPP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Integer qty = Integer.parseInt(parameters[1].trim());
+            Integer qty   = Integer.parseInt(parameters[1].trim());
 
             boolean ok = productSupplyService.validateSuppliesAvailability(productId, qty);
-            return emailResponseService.generateHeader("VALSUPP") + " Disponibilidad: " + (ok ? "SI" : "NO") + "\nOK\n";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(emailResponseService.generateHeader("VALSUPP"));
+            sb.append(" Disponibilidad de insumos: ").append(ok ? "SI" : "NO").append("\n");
+            sb.append(MINI_SEPARATOR).append("\n");
+            sb.append("   • Producto ID: ").append(productId).append("\n");
+            sb.append("   • Cantidad solicitada: ").append(qty).append("\n\n");
+            sb.append("OK\n");
+            return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al validar disponibilidad de insumos: " + e.getMessage(), "VALSUPP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al validar disponibilidad de insumos: " + e.getMessage(), "VALSUPP");
         }
     }
 
@@ -201,17 +254,28 @@ public class ProductSupplyCommand {
     public String handleConsumeSuppliesForProduction(String[] parameters) {
         try {
             if (parameters.length < 3) {
-                return emailResponseService.formatErrorResponse("Número incorrecto de parámetros. Se esperaban 3: [productId,quantity,productionOrderId]", "CONSUPP");
+                return emailResponseService.formatErrorResponse(
+                        "Número incorrecto de parámetros. Se esperaban 3: [productId,quantity,productionOrderId]",
+                        "CONSUPP");
             }
             Long productId = Long.parseLong(parameters[0].trim());
-            Integer qty = Integer.parseInt(parameters[1].trim());
+            Integer qty   = Integer.parseInt(parameters[1].trim());
             Long productionOrderId = Long.parseLong(parameters[2].trim());
 
             productSupplyService.consumeSuppliesForProduction(productId, qty, productionOrderId);
-            return emailResponseService.generateHeader("CONSUPP") + " Insumos consumidos para producción.\nOK\n";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(emailResponseService.generateHeader("CONSUPP"));
+            sb.append(" Insumos consumidos para producción.\n");
+            sb.append(MINI_SEPARATOR).append("\n");
+            sb.append("   • Producto ID: ").append(productId).append("\n");
+            sb.append("   • Cantidad producida: ").append(qty).append("\n");
+            sb.append("   • Orden de producción: ").append(productionOrderId).append("\n\n");
+            sb.append("OK\n");
+            return sb.toString();
         } catch (Exception e) {
-            return emailResponseService.formatErrorResponse("Error al consumir insumos para producción: " + e.getMessage(), "CONSUPP");
+            return emailResponseService.formatErrorResponse(
+                    "Error al consumir insumos para producción: " + e.getMessage(), "CONSUPP");
         }
     }
-
 }
