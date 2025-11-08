@@ -18,7 +18,7 @@ import java.util.HashMap;
 
 @Service
 public class ProductSupplyService {
-    
+
     @Autowired
     private ProductSupplyRepository productSupplyRepository;
 
@@ -33,36 +33,24 @@ public class ProductSupplyService {
 
     @Transactional
     public ProductSupply addSupplyToProduct(Long productId, Long supplyId, BigDecimal requiredAmount) {
-        // Validar cantidad
         if (requiredAmount == null || requiredAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("La cantidad requerida debe ser mayor que cero");
         }
-
-        // Buscar producto e insumo
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
-        
         Supply supply = supplyRepository.findById(supplyId)
                 .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + supplyId));
 
-        // Crear la relación
         ProductSupply productSupply = new ProductSupply(product, supply, requiredAmount);
         return productSupplyRepository.save(productSupply);
     }
 
     @Transactional
     public void removeSupplyFromProduct(Long productId, Long supplyId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
-        
-        Supply supply = supplyRepository.findById(supplyId)
-                .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + supplyId));
-
-        List<ProductSupply> relations = productSupplyRepository.findByProduct(product);
-        relations.stream()
-                .filter(ps -> ps.getSupply().getId().equals(supplyId))
-                .findFirst()
-                .ifPresent(productSupplyRepository::delete);
+        int rows = productSupplyRepository.deleteByProductIdAndSupplyId(productId, supplyId);
+        if (rows == 0) {
+            throw new RuntimeException("Relación producto-insumo no encontrada");
+        }
     }
 
     @Transactional
@@ -70,69 +58,48 @@ public class ProductSupplyService {
         if (newAmount == null || newAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("La cantidad requerida debe ser mayor que cero");
         }
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
-        
-        Supply supply = supplyRepository.findById(supplyId)
-                .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + supplyId));
-
-        ProductSupply productSupply = productSupplyRepository.findByProduct(product).stream()
-                .filter(ps -> ps.getSupply().getId().equals(supplyId))
-                .findFirst()
+        ProductSupply ps = productSupplyRepository
+                .findByProductIdAndSupplyIdFetch(productId, supplyId)
                 .orElseThrow(() -> new RuntimeException("Relación producto-insumo no encontrada"));
-
-        productSupply.setRequiredAmount(newAmount);
-        return productSupplyRepository.save(productSupply);
+        ps.setRequiredAmount(newAmount);
+        return productSupplyRepository.save(ps);
     }
 
     @Transactional(readOnly = true)
     public List<ProductSupply> getSuppliesForProduct(Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
-        return productSupplyRepository.findByProduct(product);
+        return productSupplyRepository.findAllByProductIdFetchAll(productId);
     }
 
     @Transactional(readOnly = true)
     public List<ProductSupply> getProductsUsingSupply(Long supplyId) {
-        Supply supply = supplyRepository.findById(supplyId)
-                .orElseThrow(() -> new RuntimeException("Insumo no encontrado con id: " + supplyId));
-        return productSupplyRepository.findBySupply(supply);
+        return productSupplyRepository.findAllBySupplyIdFetchAll(supplyId);
     }
 
     @Transactional(readOnly = true)
     public Map<Supply, BigDecimal> calculateRequiredSupplies(Long productId, Integer quantity) {
-        if (quantity <= 0) {
+        if (quantity == null || quantity <= 0) {
             throw new RuntimeException("La cantidad debe ser mayor que cero");
         }
+        List<ProductSupply> supplies = productSupplyRepository.findAllByProductIdFetchAll(productId);
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
-
-        List<ProductSupply> supplies = productSupplyRepository.findByProduct(product);
         Map<Supply, BigDecimal> requiredSupplies = new HashMap<>();
-
         for (ProductSupply ps : supplies) {
             BigDecimal totalRequired = ps.getRequiredAmount().multiply(BigDecimal.valueOf(quantity));
             requiredSupplies.put(ps.getSupply(), totalRequired);
         }
-
         return requiredSupplies;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public boolean validateSuppliesAvailability(Long productId, Integer quantity) {
         Map<Supply, BigDecimal> requiredSupplies = calculateRequiredSupplies(productId, quantity);
-        
         for (Map.Entry<Supply, BigDecimal> entry : requiredSupplies.entrySet()) {
             Supply supply = entry.getKey();
             BigDecimal required = entry.getValue();
-            
             if (supply.getStockActual().compareTo(required) < 0) {
                 return false;
             }
         }
-        
         return true;
     }
 
@@ -141,14 +108,10 @@ public class ProductSupplyService {
         if (!validateSuppliesAvailability(productId, quantity)) {
             throw new RuntimeException("No hay suficientes insumos disponibles para la producción");
         }
-
         Map<Supply, BigDecimal> requiredSupplies = calculateRequiredSupplies(productId, quantity);
-        
         for (Map.Entry<Supply, BigDecimal> entry : requiredSupplies.entrySet()) {
             Supply supply = entry.getKey();
             BigDecimal required = entry.getValue();
-            
-            // Registrar el consumo de insumos vinculado a la orden de producción
             supplyService.registerMovement(
                 supply.getId(),
                 SupplyMovement.MovementType.EXIT,
