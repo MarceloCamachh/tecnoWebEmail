@@ -5,13 +5,12 @@ import org.springframework.stereotype.Component;
 
 import com.example.tecnoWebEmail.Commands.CommandProcessor;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jakarta.mail.internet.MimeUtility;
 
 @Component
 public class ClientPOP {
@@ -108,31 +107,26 @@ public class ClientPOP {
         EmailInfo info = new EmailInfo();
         String currentHeader = null;
         StringBuilder headerValue = new StringBuilder();
-
-        // Dividimos el contenido del correo en líneas
         String[] lines = emailContent.split("\n");
 
         for (String line : lines) {
             // Si la línea está vacía, terminaron los encabezados.
             if (line.trim().isEmpty()) {
                 if (currentHeader != null) {
-                    break; // Salir del bucle, ya encontramos lo que queríamos.
+                    break;
                 }
                 continue;
             }
 
-            // Detectar un nuevo encabezado (From: o Subject:)
             if (line.startsWith("From: ") || line.startsWith("Subject: ")) {
-                // Guardar el encabezado anterior antes de empezar uno nuevo
                 if (currentHeader != null) {
                     processHeader(info, currentHeader, headerValue.toString().trim());
                 }
 
-                // Empezar el nuevo encabezado
                 if (line.startsWith("From: ")) {
                     currentHeader = "From";
                     headerValue = new StringBuilder(line.substring(6));
-                } else { // Subject:
+                } else {
                     currentHeader = "Subject";
                     headerValue = new StringBuilder(line.substring(9));
                 }
@@ -140,7 +134,6 @@ public class ClientPOP {
             // Detectar una línea "doblada" (continúa el encabezado anterior)
             else if (line.startsWith(" ") || line.startsWith("\t")) {
                 if (currentHeader != null) {
-                    // Añadir el contenido de la línea doblada
                     headerValue.append(" ").append(line.trim());
                 }
             }
@@ -154,13 +147,18 @@ public class ClientPOP {
         return info;
     }
 
-    // --- NUEVO MÉTODO HELPER ---
     // Ayudante para asignar los valores de encabezado a la clase EmailInfo
     private void processHeader(EmailInfo info, String headerName, String headerValue) {
         if ("From".equals(headerName)) {
             info.from = extractEmailAddress(headerValue);
         } else if ("Subject".equals(headerName)) {
-            info.subject = headerValue;
+            try {
+                info.subject = MimeUtility.decodeText(headerValue);
+            } catch (UnsupportedEncodingException e) {
+                // Si falla la decodificación, usamos el valor crudo
+                System.err.println("Error decoding subject, using raw value: " + e.getMessage());
+                info.subject = headerValue;
+            }
         }
     }
 
