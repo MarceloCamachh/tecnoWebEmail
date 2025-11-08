@@ -22,6 +22,12 @@ public class CommandProcessor {
     @Autowired
     private UserCommand userCommand;
     @Autowired
+    private ProductCommand productCommand;
+    @Autowired
+    private ProductSupplyCommand productSupplyCommand;
+    @Autowired
+    private SupplyCommand supplyCommand;
+    @Autowired
     private OrderCommand orderCommand;
     @Autowired
     private InstallmentCommand installmentCommand;
@@ -71,6 +77,60 @@ public class CommandProcessor {
                     return userCommand.handleInsertUser(parameters);
                 case "UPDUSU":
                     return userCommand.handleUpdateUser(parameters);
+
+                //productos
+                case "LISPRO":
+                    return productCommand.handleListProducts();
+                case "BUSPRO":
+                    return productCommand.handleSearchProductBySku(parameters);
+                case "INSPRO":
+                    return productCommand.handleInsertProduct(parameters);
+                case "UPDPRO":
+                    return productCommand.handleUpdateProduct(parameters);
+                case "ENTPRO":
+                    return productCommand.handleRegisterEntry(parameters);
+                case "SALPRO":
+                    return productCommand.handleRegisterExit(parameters);
+                case "ADJPRO":
+                    return productCommand.handleAdjustStock(parameters);
+                
+                // relaciones producto-insumo
+                case "ADDSUPP":
+                    return productSupplyCommand.handleAddSupplyToProduct(parameters);
+                case "REMSUPP":
+                    return productSupplyCommand.handleRemoveSupplyFromProduct(parameters);
+                case "UPDPSP":
+                    return productSupplyCommand.handleUpdateRequiredAmount(parameters);
+                case "LISPSP":
+                    return productSupplyCommand.handleListSuppliesForProduct(parameters);
+                case "LISUPP":
+                    return productSupplyCommand.handleListProductsUsingSupply(parameters);
+                case "CALRSU":
+                    return productSupplyCommand.handleCalculateRequiredSupplies(parameters);
+                case "VALSUPP":
+                    return productSupplyCommand.handleValidateSuppliesAvailability(parameters);
+                case "CONSUPP":
+                    return productSupplyCommand.handleConsumeSuppliesForProduction(parameters);
+                
+                // insumos / supplies
+                case "LISSUP":
+                    return supplyCommand.handleListSupplies();
+                case "BUSSUP":
+                    return supplyCommand.handleSearchSupplyByName(parameters);
+                case "INSSUP":
+                    return supplyCommand.handleInsertSupply(parameters);
+                case "UPDSUP":
+                    return supplyCommand.handleUpdateSupply(parameters);
+                case "DELSUP":
+                    return supplyCommand.handleDeleteSupply(parameters);
+                case "ENTSUP":
+                    return supplyCommand.handleRegisterEntry(parameters);
+                case "SALSUP":
+                    return supplyCommand.handleRegisterExit(parameters);
+                case "ADJSUP":
+                    return supplyCommand.handleAdjustStock(parameters);
+                case "MOVSUP":
+                    return supplyCommand.handleListMovements(parameters);
 
                 //orders
                 case "LISORD":
