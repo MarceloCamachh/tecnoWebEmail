@@ -33,4 +33,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH d.product p " +
             "WHERE o.id = :orderId")
     Optional<Order> findByIdWithAllDetails(@Param("orderId") Long orderId);
+
+    @Query("SELECT o FROM Order o JOIN FETCH o.client c")
+    List<Order> findAllWithClient();
 }

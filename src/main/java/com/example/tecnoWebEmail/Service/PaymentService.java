@@ -99,18 +99,24 @@ public class PaymentService {
         return paymentRepository.findById(id);
     }
 
+    public Optional<Payment> findByIdWithDetails(Long id) {
+        return paymentRepository.findByIdWithDetails(id);
+    }
+
+
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
+    }
+
+    public List<Payment> findAllWithDetails() {
+        return paymentRepository.findAllWithDetails();
     }
 
     /**
      * Obtiene todos los pagos asociados a un ID de pedido.
      */
     public List<Payment> getPaymentsByOrderId(Long orderId) {
-        // Validamos que el pedido exista
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
-        return paymentRepository.findByOrder(order);
+        return paymentRepository.findByOrderIdWithDetails(orderId);
     }
 
     /**
@@ -120,6 +126,10 @@ public class PaymentService {
         Installment installment = installmentService.getInstallmentById(installmentId)
                 .orElseThrow(() -> new RuntimeException("Installment not found with id: " + installmentId));
         return paymentRepository.findByInstallment(installment);
+    }
+
+    public List<Payment> findByInstallmentIdWithDetails(Long installmentId) {
+        return paymentRepository.findByInstallmentIdWithDetails(installmentId);
     }
 
     /**
