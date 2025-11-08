@@ -33,6 +33,10 @@ public class CommandProcessor {
     private InstallmentCommand installmentCommand;
     @Autowired
     private PaymentCommand paymentCommand;
+    @Autowired
+    private OrderDetailCommand orderDetailCommand;
+    @Autowired
+    private ProductionOrderCommand productionOrderCommand;
 
     public String processCommand(String subject, String senderEmail) {
         System.out.println("DEBUG: processCommand iniciado - subject: [" + subject + "], sender: [" + senderEmail + "]");
@@ -139,8 +143,16 @@ public class CommandProcessor {
                     return orderCommand.handleSearchOrder(parameters);//por id
                 case "INSORD":
                     return orderCommand.handleInsertOrder(parameters);
-                default:
-                    return emailResponseService.formatUnknownCommandResponse(command);
+                case "CONFORD":
+                    return orderCommand.handleConfirmOrder(parameters);
+
+                //detalles de orden
+                case "ADDET":
+                    return orderDetailCommand.handleAddDetailToOrder(parameters);
+
+                //orden de produccion
+                case "INSPROD":
+                    return productionOrderCommand.handleCreateProductionOrder(parameters);
 
                 //cuotas de pago
                 case "LISCUP"://buscaria las cuotas de una orden
@@ -161,6 +173,9 @@ public class CommandProcessor {
                     return paymentCommand.handleListPaymentsByOrder(parameters);
                 case "LISCUPAG":
                     return paymentCommand.handleListPaymentsByInstallment(parameters);
+
+                default:
+                    return emailResponseService.formatUnknownCommandResponse(command);
             }
 
         } catch (Exception e) {
