@@ -37,6 +37,8 @@ public class CommandProcessor {
     private OrderDetailCommand orderDetailCommand;
     @Autowired
     private ProductionOrderCommand productionOrderCommand;
+    @Autowired
+    private HelpCommand helpCommand;
 
     public String processCommand(String subject, String senderEmail) {
         System.out.println("DEBUG: processCommand iniciado - subject: [" + subject + "], sender: [" + senderEmail + "]");
@@ -173,6 +175,10 @@ public class CommandProcessor {
                     return paymentCommand.handleListPaymentsByOrder(parameters);
                 case "LISCUPAG":
                     return paymentCommand.handleListPaymentsByInstallment(parameters);
+
+                // ayuda
+                case "HELP":
+                    return helpCommand.handleHelp(parameters);
 
                 default:
                     return emailResponseService.formatUnknownCommandResponse(command);
